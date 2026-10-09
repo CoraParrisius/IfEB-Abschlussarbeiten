@@ -8,3 +8,5 @@ rsconnect/
 
 /.quarto/
 /_site/
+.httr-oauth
+.quarto
