@@ -1,0 +1,22 @@
+project:
+  type: website
+  render:
+    - index.qmd
+  resources:
+    - _img/*
+
+website:
+  title: "Abschlussarbeiten am IfEB"
+  favicon: _img/2023-05-16_Logo_Dunkelgruen_Online.png
+  page-footer:
+    center: "Institut für Empirische Bildungsforschung (IfEB) · Pädagogische Hochschule Karlsruhe"
+
+format:
+  html:
+    theme: [cosmo, theme.scss]
+    lang: de
+    toc: false
+    grid:
+      body-width: 1100px
+      margin-width: 0px
+      sidebar-width: 0px
