@@ -4,6 +4,7 @@
 .Ruserdata
 .DS_Store
 .posit/
+rsconnect/
 
 /.quarto/
 /_site/
