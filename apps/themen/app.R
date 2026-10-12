@@ -4,7 +4,7 @@ library(DT)
 
 excel_url <- "https://cloud.ph-karlsruhe.de/index.php/s/g7S755oDEnB8acQ/download"
 
-col_stg <- "Geeignet für Studiengang…"
+col_stg <- "Geeignet für Studiengang"
 col_kat <- "Themenkategorie"
 col_bet <- "Betreuer:in"
 col_emp <- "Empirisch/nicht-empirisch"
@@ -32,6 +32,9 @@ load_live <- function() {
   df <- as.data.frame(readxl::read_excel(f, sheet = 1), check.names = FALSE)
   # Zeilenumbrüche in Spaltennamen entfernen
   names(df) <- gsub("\\s*[\r\n]+\\s*", " ", sub("/\\s*[\r\n]+\\s*", "/", names(df)))
+  df[] <- lapply(df, function(x) {
+    if (is.character(x)) trimws(x, whitespace = "[\\h\\v]") else x
+  })
 
   list(data = df, stand = get_last_modified(f))
 }
@@ -122,6 +125,12 @@ server <- function(input, output, session) {
 
   output$table <- renderDT({
     df <- filtered_data()
+
+    # Texte für die HTML-Darstellung maskieren (escape = FALSE unten)
+    df[] <- lapply(df, function(x) {
+      if (is.character(x)) ifelse(is.na(x), NA_character_, htmltools::htmlEscape(x)) else x
+    })
+    
     # 0-basierte Indizes der aufklappbaren Spalten (rownames = FALSE)
     long_cols <- which(names(df) %in% col_long) - 1
 
