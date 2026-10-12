@@ -1,4 +1,5 @@
 library(shiny)
+library(shinyWidgets)
 library(bslib)
 library(DT)
 
@@ -8,7 +9,7 @@ col_stg <- "Geeignet für Studiengang"
 col_kat <- "Themenkategorie"
 col_bet <- "Betreuer:in"
 col_emp <- "Empirisch/nicht-empirisch"
-col_hide <- "Verfügbar?"
+col_hide <- c("Verfügbar?", "In vorhandendes (Promotions-) Projekt eingebunden?")
 col_long <- c("Thema/Forschungsfrage", "Beschreibung des Vorhabens")
 
 # Zeitpunkt der letzten Änderung der Excel-Datei (aus den xlsx-Metadaten)
@@ -39,6 +40,7 @@ load_live <- function() {
   list(data = df, stand = get_last_modified(f))
 }
 
+# Cache
 cache <- new.env()
 
 get_data <- function(max_age = 300) {
@@ -56,14 +58,35 @@ get_data <- function(max_age = 300) {
   cache$data
 }
 
+# Picker Input (Filter)
+picker <- function(id, label) {
+  pickerInput(
+    id, label,
+    choices = NULL, multiple = TRUE, width = "100%",
+    options = pickerOptions(
+      actionsBox = TRUE,
+      liveSearch = FALSE,
+      noneSelectedText = "Alle",
+      selectAllText = "Alle auswählen",
+      deselectAllText = "Auswahl aufheben",
+      selectedTextFormat = "count > 2",
+      countSelectedText = "{0} ausgewählt",
+      container = "body"          # verhindert Abschneiden der Liste im Sidebar-Container
+    )
+  )
+}
+
+############################################################################# #
+## UI                                                                      ####
+############################################################################# #
 ui <- page_sidebar(
   fillable = FALSE,
   sidebar = sidebar(
     width = 300,
-    selectizeInput("studiengang", col_stg, choices = NULL, multiple = TRUE),
-    selectizeInput("themenkategorie", col_kat, choices = NULL, multiple = TRUE),
-    selectizeInput("betreuung", col_bet, choices = NULL, multiple = TRUE),
-    selectizeInput("empirisch", col_emp, choices = NULL, multiple = TRUE)
+    picker("studiengang", col_stg),
+    picker("themenkategorie", col_kat),
+    picker("betreuung", col_bet),
+    picker("empirisch", col_emp)
   ),
   tags$style("
     table.dataTable td { vertical-align: top; }
@@ -80,6 +103,9 @@ ui <- page_sidebar(
   uiOutput("content")
 )
 
+############################################################################# #
+## SERVER                                                                  ####
+############################################################################# #
 server <- function(input, output, session) {
   res <- reactive(get_data())
 
@@ -98,14 +124,10 @@ server <- function(input, output, session) {
   observe({
     req(res())
     df <- res()$data
-    updateSelectizeInput(session, "studiengang",
-                         choices = sort(unique(df[[col_stg]])), server = FALSE)
-    updateSelectizeInput(session, "themenkategorie",
-                         choices = sort(unique(df[[col_kat]])), server = FALSE)
-    updateSelectizeInput(session, "betreuung",
-                         choices = sort(unique(df[[col_bet]])), server = FALSE)
-    updateSelectizeInput(session, "empirisch",
-                         choices = sort(unique(df[[col_emp]])), server = FALSE)
+    updatePickerInput(session, "studiengang",      choices = sort(unique(df[[col_stg]])))
+    updatePickerInput(session, "themenkategorie",  choices = sort(unique(df[[col_kat]])))
+    updatePickerInput(session, "betreuung",        choices = sort(unique(df[[col_bet]])))
+    updatePickerInput(session, "empirisch",        choices = sort(unique(df[[col_emp]])))
   })
 
   filtered_data <- reactive({
