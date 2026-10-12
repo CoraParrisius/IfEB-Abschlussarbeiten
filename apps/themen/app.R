@@ -36,6 +36,23 @@ load_live <- function() {
   list(data = df, stand = get_last_modified(f))
 }
 
+cache <- new.env()
+
+get_data <- function(max_age = 300) {
+  now <- Sys.time()
+  expired <- is.null(cache$data) ||
+    as.numeric(difftime(now, cache$time, units = "secs")) > max_age
+
+  if (expired) {
+    new_data <- tryCatch(load_live(), error = function(e) NULL)
+    if (!is.null(new_data)) {
+      cache$data <- new_data
+      cache$time <- now
+    }
+  }
+  cache$data
+}
+
 ui <- page_sidebar(
   fillable = FALSE,
   sidebar = sidebar(
@@ -61,9 +78,7 @@ ui <- page_sidebar(
 )
 
 server <- function(input, output, session) {
-  res <- reactive({
-    tryCatch(load_live(), error = function(e) NULL)
-  })
+  res <- reactive(get_data())
 
   output$stand <- renderUI({
     if (is.null(res())) return(NULL)
